@@ -21,7 +21,7 @@ function print_missing_libs() {
 
 	for binary in $BINARIES; do
 		# Filter out every shared lib which is not found on the given binary
-		res_tmp=`ldd $binary | grep "not found" | awk {'print $1'} | uniq | sed -e 's/^[[:space:]]*//'`
+		res_tmp=`ldd $binary 2>/dev/null | grep "not found" | awk {'print $1'} | uniq | sed -e 's/^[[:space:]]*//'`
 
 		# if $tmp is empty there is no missing shared lib found
 		if [[ $res_tmp != "" ]]; then
