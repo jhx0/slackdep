@@ -2,17 +2,66 @@
 
 set -e
 
+PRG_NAME='slackdep'
+PRG_VER='0.1'
+
 BIN_PATHS="/bin /sbin /usr/bin /usr/sbin /usr/local/bin /usr/local/sbin /usr/games"
+SLACKPKG="/usr/sbin/slackpkg"
+
+EXIT_OK=0
+EXIT_FAIL=1
+
+ARG=$1
 
 RED='\033[1;31m'
 GREEN='\033[1;32m'
 NC='\033[0m'
 
+function usage() {
+	echo "USAGE: $PRG_NAME [-h|-v]"
+	echo "   -h Show this help"
+	echo "   -v Show version"
+	echo "written by jhx (2023)"
+	exit $EXIT_OK
+}
+
+function version() {
+	echo "$PRG_NAME v${PRG_VER}"
+	exit $EXIT_OK
+}
+
+function error() {
+	echo -e "${RED}[Error]${NC} ${GREEN}$1${NC} - $2"
+	exit $EXIT_FAIL
+}
+
+function msg() {
+	echo -e "${RED}[${GREEN}Info${RED}]${NC} $1"
+}
+
+function init() {
+	if [[ "$ARG" == "-h" ]]; then
+		usage
+	fi
+
+	if [[ "$ARG" == "-v" ]]; then
+		version
+	fi
+
+	msg "Checking for Slackpkg..."
+	if [[ ! -f $SLACKPKG ]]; then
+		error "init()" "Not found, aborting. Please install slackpkg!"
+	fi
+	msg "Slackpkg found."
+}
+
 function search_lib() {
-	slackpkg file-search $1 | grep "uninstalled" | awk {'print $3'}
+	$SLACKPKG file-search $1 | grep "uninstalled" | awk {'print $3'}
 }
 
 function print_missing_libs() {
+	msg "Running Slackdep..."
+
 	# Get all binaries from the paths defined in $BIN_PATHS
 	BINARIES=`find $BIN_PATHS -type f -executable 2>/dev/null | sort`
 
@@ -50,12 +99,16 @@ function print_missing_libs() {
 		search_lib $lib
 	done
 	echo
+
+	msg "Done!"
 }
 
 function main() {
+	init
+
 	print_missing_libs
 
-	exit 0
+	exit $EXIT_OK
 }
 
 main
